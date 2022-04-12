@@ -1,0 +1,16 @@
+#query_file,best_match,distance
+4168.png,subject01.happy.png,0.4520166516304016
+4387.png,subject02.noglasses.png,0.0
+4507.png,subject07.noglasses.png,0.0
+4535.png,subject03.noglasses.png,0.0
+5314.png,subject08.glasses.png,0.0
+6012.png,NO_MATCH,1.3634517192840576
+6510.png,subject09.sleepy.png,0.8134217262268066
+6653.png,subject05.noglasses.png,0.11599063128232956
+6706.png,NO_MATCH,1.570994257926941
+7076.png,subject06.noglasses.png,0.0
+7549.png,subject09.noglasses.png,0.0
+7633.png,subject04.sad.png,0.0
+7745.png,NO_MATCH,1.2318886518478394
+9395.png,subject10.noglasses.png,0.18750175833702087
+9708.png,subject10.sleepy.png,1.0582305192947388
