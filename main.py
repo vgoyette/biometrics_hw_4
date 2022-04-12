@@ -38,53 +38,6 @@ SUBJECTS = ['subject0' + str(j) for j in range(1, 10)] + ['subject10']
 TOTAL_GENUINE_PAIRS = 441
 
 
-def test_run():
-    # Test script.
-    img1 = a_acquire.acquire_from_file('data/test_data/face_1_1.jpg', view=VIEW)
-    face1 = b_enhance.enhance(img1, view=VIEW)
-    # face1 = b_enhance_2.enhance(img1, view=VIEW) #CNN face detector instead of classical Viola-Jones
-    desc_1 = c_describe.describe(face1)
-
-    img2 = a_acquire.acquire_from_file('data/test_data/face_1_2.jpg', view=VIEW)
-    face2 = b_enhance.enhance(img2, view=VIEW)
-    # face2 = b_enhance_2.enhance(img2, view=VIEW) #CNN face detector instead of classical Viola-Jones
-    desc_2 = c_describe.describe(face2)
-
-    img3 = a_acquire.acquire_from_file('data/test_data/face_2_1.jpg', view=VIEW)
-    face3 = b_enhance.enhance(img3, view=VIEW)
-    # face3 = b_enhance_2.enhance(img3, view=VIEW) #CNN face detector instead of classical Viola-Jones
-    desc_3 = c_describe.describe(face3)
-
-    img4 = a_acquire.acquire_from_file('data/test_data/face_2_2.jpg', view=VIEW)
-    face4 = b_enhance.enhance(img4, view=VIEW)
-    # face4 = b_enhance_2.enhance(img4, view=VIEW) #CNN face detector instead of classical Viola-Jones
-    desc_4 = c_describe.describe(face4)
-
-    img5 = a_acquire.acquire_from_file('data/test_data/face_3_1.jpg', view=VIEW)
-    face5 = b_enhance.enhance(img5, view=VIEW)
-    # face5 = b_enhance_2.enhance(img5, view=VIEW) #CNN face detector instead of classical Viola-Jones
-    desc_5 = c_describe.describe(face5)
-
-    img6 = a_acquire.acquire_from_file('data/test_data/face_3_2.jpg', view=VIEW)
-    face6 = b_enhance.enhance(img6, view=VIEW)
-    # face6 = b_enhance_2.enhance(img6, view=VIEW) #CNN face detector instead of classical Viola-Jones
-    desc_6 = c_describe.describe(face6)
-
-    dist_12 = d_match.match(desc_1, desc_2)
-    dist_34 = d_match.match(desc_3, desc_4)
-    dist_56 = d_match.match(desc_5, desc_6)
-    print('')
-
-    dist_13 = d_match.match(desc_1, desc_3)
-    dist_24 = d_match.match(desc_2, desc_4)
-    dist_15 = d_match.match(desc_1, desc_5)
-    dist_26 = d_match.match(desc_2, desc_6)
-    dist_35 = d_match.match(desc_3, desc_5)
-    dist_46 = d_match.match(desc_4, desc_6)
-
-    return None
-
-
 # This function just calls the different enhance functions based on what argument you'd like to use
 def enhance_face(img):
     if ALGO_TYPE not in ('vj', 'cnn'):
@@ -148,8 +101,9 @@ def generate_impostor_pairs():
     return impostor_pairs
 
 
-# I only ran this function a few times to get the files in place for reading later and so this system could be
-# ... replicated. Running this will get new impostor pairs so only do so if you need to generate new pairs
+# ONE-OFF FUNCTION
+# I only ran this function a few times to get the files in place for reading later and so this system could be ...
+# ... replicated. Running this will get new impostor pairs so only do so if you need to generate new pairs.
 # I essentially created these files such that we can see where each score is coming from in the results file later
 def create_files():
     yes = input("Creating new impostor_pairs.csv that will overwrite existing ones. Proceed? (y/n) ").lower().rstrip()
@@ -170,14 +124,7 @@ def create_files():
         return False
 
 
-def read_file(filename):
-    pairs = []
-    with open(filename, 'r') as f:
-        f.readline()  # Skip header
-        pairs += [tuple(line.rstrip().split(',')) for line in f.readlines()]
-    return pairs
-
-
+# Finds the angular distance between two different faces given the filepaths to their images
 def get_distance(file1, file2):
     path1, path2 = DATASET_PATH + file1, DATASET_PATH + file2
     print(path1, path2)
@@ -188,9 +135,10 @@ def get_distance(file1, file2):
     return dist
 
 
+# This also is a one-off function. The results are stored in data/results.csv
 # This function actually runs pretty fast for how much stuff goes on in it
 # Basically, every pair is iterated over, has the images read in, enhanced, and described, and then a distance
-# is calculated and stored in a CSV file along with a label
+# is calculated and stored in a CSV file along with a label (1 for genuine, 0 for impostor
 def calculate_distances(genuine_pairs, impostor_pairs):
     with open('data/results.csv', 'w') as f:
         i = 0
@@ -207,11 +155,13 @@ def calculate_distances(genuine_pairs, impostor_pairs):
             i += 1
 
 
-def get_metrics(filename):
+# Uses the metrics.py methods to return the EER and AUC of a given system, and prints them to the user
+# Also will plot the ROC curve of the system
+def get_metrics(results_filename):
     # Load the results
-    observations = metrics.load_data(filename)
+    observations = metrics.load_data(results_filename)
 
-    # Get the ideal threshold and other metrics
+    # Get the ideal threshold and FNMR and FMR
     fnmr, fmr, eer = metrics.compute_fmr_fnmr_eer(observations, 'distance')
     print(fnmr, fmr)
 
@@ -222,6 +172,7 @@ def get_metrics(filename):
     return eer, auc
 
 
+# Get an image of my own face for comparison to other faces in the dataset
 def capture_face():
     while True:
         img1 = a_acquire.acquire_from_camera(cam_id=0, view=False)
@@ -242,6 +193,9 @@ def capture_face():
     return face1
 
 
+# Get an image of my own face and then iterate over the system to find the face in the dataset that is the closest
+# match to me.
+# Returns the smallest distance found, and the filename of the image that had that distance
 def find_similar_face():
     # Capture my own face and get a description
     my_face = capture_face()
@@ -264,6 +218,9 @@ def find_similar_face():
     return min_dist, best_img
 
 
+# This function goes through each of the query files in data/queries and finds the best match for each of them
+# "Best Match" here means the subject who has the image with the smallest distance in the entire dataset when compared
+# with the query
 def find_query_results():
     query_files = load_filenames('data/queries')
     results = {f: {'min_dist': 100, 'best_file': ''} for f in query_files}
@@ -285,6 +242,9 @@ def find_query_results():
                 if dist == 0:
                     break
 
+    # Return a dictionary where each query file is a key, and its value is another dictionary containing the minimum
+    # distance, and the name of the image file with that distance
+    # i.e. { 'example1.png': { 'min_dist': 0.25, 'best_file': 'subject01.glasses.png' }, 'example2.png': ... }
     return results
 
 
@@ -303,6 +263,8 @@ if __name__ == '__main__':
     print(f"QUESTION 2.2: AUC = {auc}")
     print(f'QUESTION 2.3: Closest Face = {best_match}; Distance = {best_dist}')
     print(f'QUESTION 2.4:')
+
+    # Print the results of the different queries. If the minimum distance > threshold, say there's no match
     for q_file in query_results.keys():
         if query_results[q_file]["min_dist"] > eer:
             print(f'\tQuery File: {q_file}. NO MATCH. Minimum Distance is {query_results[q_file]["min_dist"]}:.2f')
